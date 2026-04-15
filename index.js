@@ -9,9 +9,8 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANO
 
 app.get('/api/relatorio', async (req, res) => {
     // ---------------------------------------------------------
-    // 1. TRAVA DE SEGURANÇA HÍBRIDA (Aceita Header OU URL)
+    // 1. TRAVA DE SEGURANÇA HÍBRIDA
     // ---------------------------------------------------------
-    // Tenta pegar do Header primeiro. Se vier vazio, tenta pegar da URL (?key=...)
     const clientKey = req.headers['x-api-key'] || req.query.key;
     
     if (!clientKey || clientKey !== process.env.API_KEY) {
@@ -40,6 +39,21 @@ app.get('/api/relatorio', async (req, res) => {
             media_ret: 0
         };
 
+        // --- AJUSTE DE FUSO HORÁRIO PARA BATER COM O DASHBOARD ---
+        let startDateISO, endDateISO;
+
+        if (inicio) {
+            // Cria a data local (00:00:00) e converte para UTC ISO
+            const dInicio = new Date(`${inicio}T00:00:00`);
+            startDateISO = dInicio.toISOString();
+        }
+
+        if (fim) {
+            // Cria a data local (23:59:59) e converte para UTC ISO
+            const dFim = new Date(`${fim}T23:59:59`);
+            endDateISO = dFim.toISOString();
+        }
+
         // Paginação infinita para o Supabase
         let temMaisDados = true;
         let step = 1000; 
@@ -52,8 +66,9 @@ app.get('/api/relatorio', async (req, res) => {
                 .select('*')
                 .range(from, to);
 
-            if (inicio) query = query.gte('created_at', `${inicio}T00:00:00.000Z`);
-            if (fim) query = query.lte('created_at', `${fim}T23:59:59.999Z`);
+            // Aplicando os filtros com as datas convertidas corretamente
+            if (startDateISO) query = query.gte('created_at', startDateISO);
+            if (endDateISO) query = query.lte('created_at', endDateISO);
 
             const { data, error } = await query;
 
@@ -118,5 +133,5 @@ app.get('/api/relatorio', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 API Híbrida (Header + URL) rodando na porta ${PORT}`);
+    console.log(`🚀 API Híbrida sincronizada rodando na porta ${PORT}`);
 });
