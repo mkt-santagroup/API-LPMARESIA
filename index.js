@@ -11,7 +11,7 @@ app.get('/api/relatorio', async (req, res) => {
     // ---------------------------------------------------------
     // 1. TRAVA DE SEGURANÇA: Verifica a API Key no Header
     // ---------------------------------------------------------
-    const clientKey = req.headers['x-api-key'];
+    const clientKey = req.query.key;
     
     if (!clientKey || clientKey !== process.env.API_KEY) {
         return res.status(401).json({ erro: "Acesso negado. Chave de API inválida ou ausente." });
