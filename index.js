@@ -8,18 +8,12 @@ app.use(cors());
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.get('/api/relatorio', async (req, res) => {
-    // ---------------------------------------------------------
-    // 1. TRAVA DE SEGURANÇA HÍBRIDA
-    // ---------------------------------------------------------
     const clientKey = req.headers['x-api-key'] || req.query.key;
     
     if (!clientKey || clientKey !== process.env.API_KEY) {
         return res.status(401).json({ erro: "Acesso negado. Chave de API inválida ou ausente." });
     }
 
-    // ---------------------------------------------------------
-    // 2. BUSCA E PROCESSAMENTO DOS DADOS
-    // ---------------------------------------------------------
     try {
         const { inicio, fim } = req.query;
 
@@ -39,22 +33,22 @@ app.get('/api/relatorio', async (req, res) => {
             media_ret: 0
         };
 
-        // --- AJUSTE DE FUSO HORÁRIO PARA BATER COM O DASHBOARD ---
+        // ---------------------------------------------------------
+        // AJUSTE DEFINITIVO PARA SERVIDORES (RAILWAY/UTC)
+        // ---------------------------------------------------------
         let startDateISO, endDateISO;
 
         if (inicio) {
-            // Cria a data local (00:00:00) e converte para UTC ISO
-            const dInicio = new Date(`${inicio}T00:00:00`);
-            startDateISO = dInicio.toISOString();
+            // Criamos a data e forçamos o fuso -03:00 (Brasília)
+            // Isso garante que independente do servidor, ele saiba que é 00:00 do Brasil
+            startDateISO = new Date(`${inicio}T00:00:00-03:00`).toISOString();
         }
 
         if (fim) {
-            // Cria a data local (23:59:59) e converte para UTC ISO
-            const dFim = new Date(`${fim}T23:59:59`);
-            endDateISO = dFim.toISOString();
+            // Mesma coisa para o final do dia
+            endDateISO = new Date(`${fim}T23:59:59-03:00`).toISOString();
         }
 
-        // Paginação infinita para o Supabase
         let temMaisDados = true;
         let step = 1000; 
         let from = 0;
@@ -66,7 +60,6 @@ app.get('/api/relatorio', async (req, res) => {
                 .select('*')
                 .range(from, to);
 
-            // Aplicando os filtros com as datas convertidas corretamente
             if (startDateISO) query = query.gte('created_at', startDateISO);
             if (endDateISO) query = query.lte('created_at', endDateISO);
 
@@ -108,9 +101,6 @@ app.get('/api/relatorio', async (req, res) => {
             }
         }
 
-        // ---------------------------------------------------------
-        // 3. MATEMÁTICA FINAL E RESPOSTA
-        // ---------------------------------------------------------
         if (relatorio.usuarios_uni === 0) {
             return res.json({ mensagem: "Nenhum dado encontrado para este período." });
         }
@@ -127,11 +117,11 @@ app.get('/api/relatorio', async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ erro: "Deu ruim na hora de buscar os dados." });
+        res.status(500).json({ erro: "Erro ao buscar dados." });
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 API Híbrida sincronizada rodando na porta ${PORT}`);
+    console.log(`🚀 API Sincronizada (Fix Fuso) rodando na porta ${PORT}`);
 });
