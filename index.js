@@ -52,8 +52,8 @@ app.get('/api/relatorio', async (req, res) => {
                 .select('*')
                 .range(from, to);
 
-            if (inicio) query = query.gte('created_at', inicio);
-            if (fim) query = query.lte('created_at', fim);
+            if (inicio) query = query.gte('created_at', `${inicio}T00:00:00.000Z`);
+            if (fim) query = query.lte('created_at', `${fim}T23:59:59.999Z`);
 
             const { data, error } = await query;
 
