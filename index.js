@@ -9,9 +9,10 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANO
 
 app.get('/api/relatorio', async (req, res) => {
     // ---------------------------------------------------------
-    // 1. TRAVA DE SEGURANÇA: Verifica a API Key no Header
+    // 1. TRAVA DE SEGURANÇA HÍBRIDA (Aceita Header OU URL)
     // ---------------------------------------------------------
-    const clientKey = req.query.key;
+    // Tenta pegar do Header primeiro. Se vier vazio, tenta pegar da URL (?key=...)
+    const clientKey = req.headers['x-api-key'] || req.query.key;
     
     if (!clientKey || clientKey !== process.env.API_KEY) {
         return res.status(401).json({ erro: "Acesso negado. Chave de API inválida ou ausente." });
@@ -23,7 +24,6 @@ app.get('/api/relatorio', async (req, res) => {
     try {
         const { inicio, fim } = req.query;
 
-        // O objeto do relatório começa zerado
         const relatorio = {
             usuarios_uni: 0,
             page_views: 0,
@@ -40,7 +40,7 @@ app.get('/api/relatorio', async (req, res) => {
             media_ret: 0
         };
 
-        // Configuração do Looping (Paginação infinita)
+        // Paginação infinita para o Supabase
         let temMaisDados = true;
         let step = 1000; 
         let from = 0;
@@ -59,13 +59,11 @@ app.get('/api/relatorio', async (req, res) => {
 
             if (error) throw error;
             
-            // Se o lote vier vazio, paramos o loop
             if (!data || data.length === 0) {
                 temMaisDados = false;
                 break;
             }
 
-            // Processa as linhas do lote atual
             data.forEach(sessao => {
                 relatorio.usuarios_uni++; 
                 relatorio.page_views += (sessao.total_page_views || 0);
@@ -76,20 +74,17 @@ app.get('/api/relatorio', async (req, res) => {
                 if (sessao.has_pc === true) relatorio.tem_pc++;
                 if (sessao.has_pc === false) relatorio.nao_pc++; 
                 
-                // Retenção: só conta se o usuário deu play!
                 if (sessao.played_video) {
                     relatorio.plays++;
                     relatorio.soma_retencao += Number(sessao.exact_percentage_viewed || 0);
                 }
                 
-                // Funil visual
                 if (sessao.max_percentage_viewed >= 25) relatorio.funil_25++;
                 if (sessao.max_percentage_viewed >= 50) relatorio.funil_50++;
                 if (sessao.max_percentage_viewed >= 75) relatorio.funil_75++;
                 if (sessao.max_percentage_viewed >= 100) relatorio.funil_100++;
             });
 
-            // Prepara a próxima página ou encerra se vieram menos de 1000 registros
             if (data.length < step) {
                 temMaisDados = false;
             } else {
@@ -105,7 +100,6 @@ app.get('/api/relatorio', async (req, res) => {
             return res.json({ mensagem: "Nenhum dado encontrado para este período." });
         }
 
-        // Calcula a média dividindo SOMENTE pelos plays
         if (relatorio.plays > 0) {
             relatorio.media_ret = (relatorio.soma_retencao / relatorio.plays).toFixed(2);
         } else {
@@ -124,5 +118,5 @@ app.get('/api/relatorio', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 API com segurança ativada rodando na porta ${PORT}`);
+    console.log(`🚀 API Híbrida (Header + URL) rodando na porta ${PORT}`);
 });
