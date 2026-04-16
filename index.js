@@ -15,8 +15,7 @@ app.get('/api/relatorio', async (req, res) => {
     }
 
     try {
-        // ✅ CORREÇÃO: era "fim", mas a URL manda "final"
-        const { inicio, final } = req.query;
+        const { inicio, fim } = req.query;
 
         const relatorio = {
             usuarios_uni: 0,
@@ -36,18 +35,29 @@ app.get('/api/relatorio', async (req, res) => {
             media_ret: 0
         };
 
+        // ---------------------------------------------------------
+        // CORREÇÃO DO FUSO HORÁRIO (Brasília = UTC-3)
+        // O Supabase salva em UTC, então precisamos converter:
+        // - início do dia em Brasília = hora da query em UTC + 3h
+        // - fim do dia em Brasília   = hora da query em UTC + 3h
+        //
+        // Ex: usuário quer "dia 14 de Brasília"
+        //   início Brasília: 14T00:00:00 BRT = 14T03:00:00 UTC ✅
+        //   fim    Brasília: 14T23:59:59 BRT = 15T02:59:59 UTC ✅
+        // ---------------------------------------------------------
         let startDateISO, endDateISO;
 
         if (inicio) {
-            // 00:00:00 Brasília = 03:00:00 UTC
+            // 00:00:00 no horário de Brasília (UTC-3) = 03:00:00 UTC
             startDateISO = new Date(`${inicio}T03:00:00Z`).toISOString();
         }
 
-        if (final) {
-            // 23:59:59 Brasília = dia seguinte 02:59:59 UTC
-            const endDate = new Date(`${final}T02:59:59Z`);
-            endDate.setUTCDate(endDate.getUTCDate() + 1);
-            endDateISO = endDate.toISOString();
+        if (fim) {
+            // 23:59:59 no horário de Brasília (UTC-3) = dia seguinte 02:59:59 UTC
+            endDateISO = new Date(`${fim}T02:59:59Z`);
+            // Avança 1 dia porque 23:59:59 BRT cai no próximo dia em UTC
+            endDateISO.setUTCDate(endDateISO.getUTCDate() + 1);
+            endDateISO = endDateISO.toISOString();
         }
 
         let temMaisDados = true;
@@ -127,5 +137,5 @@ app.get('/api/relatorio', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 API (Fix fim→final) rodando na porta ${PORT}`);
+    console.log(`🚀 API (Fix Fuso BRT/UTC) rodando na porta ${PORT}`);
 });
