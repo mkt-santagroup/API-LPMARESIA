@@ -15,14 +15,15 @@ app.get('/api/relatorio', async (req, res) => {
     }
 
     try {
-        const { inicio, fim } = req.query;
+        // ✅ CORREÇÃO: era "fim", mas a URL manda "final"
+        const { inicio, final } = req.query;
 
         const relatorio = {
             usuarios_uni: 0,
             page_views: 0,
             start_funil: 0,
-            ja_jogou: 0, // <-- NOVO: Já joga GTA RP
-            nao_jogou: 0, // <-- NOVO: Não joga GTA RP
+            ja_jogou: 0,
+            nao_jogou: 0,
             tem_pc: 0,
             nao_pc: 0,
             click_grupo: 0, 
@@ -35,20 +36,18 @@ app.get('/api/relatorio', async (req, res) => {
             media_ret: 0
         };
 
-        // ---------------------------------------------------------
-        // AJUSTE DEFINITIVO PARA SERVIDORES (RAILWAY/UTC)
-        // ---------------------------------------------------------
         let startDateISO, endDateISO;
 
         if (inicio) {
-            // Criamos a data e forçamos o fuso -03:00 (Brasília)
-            // Isso garante que independente do servidor, ele saiba que é 00:00 do Brasil
-            startDateISO = new Date(`${inicio}T00:00:00-03:00`).toISOString();
+            // 00:00:00 Brasília = 03:00:00 UTC
+            startDateISO = new Date(`${inicio}T03:00:00Z`).toISOString();
         }
 
-        if (fim) {
-            // Mesma coisa para o final do dia
-            endDateISO = new Date(`${fim}T23:59:59-03:00`).toISOString();
+        if (final) {
+            // 23:59:59 Brasília = dia seguinte 02:59:59 UTC
+            const endDate = new Date(`${final}T02:59:59Z`);
+            endDate.setUTCDate(endDate.getUTCDate() + 1);
+            endDateISO = endDate.toISOString();
         }
 
         let temMaisDados = true;
@@ -81,7 +80,6 @@ app.get('/api/relatorio', async (req, res) => {
                 if (sessao.clicked_whatsapp) relatorio.start_funil++;
                 if (sessao.clicked_whatsapp_2) relatorio.click_grupo++;
                 
-                // --- NOVA LÓGICA DO GTA RP ---
                 if (sessao.plays_gta_rp === true) relatorio.ja_jogou++;
                 if (sessao.plays_gta_rp === false) relatorio.nao_jogou++;
 
@@ -129,5 +127,5 @@ app.get('/api/relatorio', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 API Sincronizada (Fix Fuso + GTA RP) rodando na porta ${PORT}`);
+    console.log(`🚀 API (Fix fim→final) rodando na porta ${PORT}`);
 });
