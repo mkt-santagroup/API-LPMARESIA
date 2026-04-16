@@ -25,9 +25,11 @@ Retorna o consolidado de métricas gerais e o funil de retenção de vídeo. Pod
   "usuarios_uni": 3729,
   "page_views": 4025,
   "start_funil": 167,
+  "ja_jogou": 45,
+  "nao_jogou": 122,
   "tem_pc": 89,
-  "nao_pc": 68,
-  "click_grupo": 84,
+  "nao_pc": 33,
+  "click_grupo": 134,
   "plays": 228,
   "funil_25": 180,
   "funil_50": 138,
@@ -40,9 +42,10 @@ Retorna o consolidado de métricas gerais e o funil de retenção de vídeo. Pod
 
 usuarios_uni: Total de registros/linhas processadas no período.
 page_views: Soma bruta da coluna total_page_views.
-start_funil: Contagem de usuários que clicaram no WhatsApp 1.
-tem_pc / nao_pc: Contagem baseada na coluna has_pc.
-click_grupo: Contagem de usuários que clicaram no WhatsApp 2.
+start_funil: Contagem de usuários que clicaram no WhatsApp 1 (iniciaram o modal).
+ja_jogou / nao_jogou: Contagem baseada na resposta da primeira etapa do modal (coluna plays_gta_rp).
+tem_pc / nao_pc: Contagem baseada na resposta da segunda etapa do modal (coluna has_pc).
+click_grupo: Contagem de usuários que chegaram ao final aprovados e clicaram no botão final do WhatsApp 2.
 plays: Quantidade de usuários que de fato iniciaram o vídeo (played_video = true).
 funil_X: Quantidade de usuários que assistiram, no mínimo, X% do vídeo.
 media_ret: Média exata de retenção calculada exclusivamente sobre a base de usuários que deram Play no vídeo.
@@ -56,9 +59,9 @@ Aqui estão os exemplos práticos de como chamar a sua API dependendo de onde vo
 
 Lifetime (Todo o histórico):https://sua-api-aqui.up.railway.app/api/relatorio?key=SUA_CHAVE_AQUI
 
-Filtrando por Datas (Ex: Janeiro de 2024):https://sua-api-aqui.up.railway.app/api/relatorio?key=SUA_CHAVE_AQUI&inicio=2024-01-01&fim=2024-01-312. 
+Filtrando por Datas (Ex: Janeiro de 2024):https://sua-api-aqui.up.railway.app/api/relatorio?key=SUA_CHAVE_AQUI&inicio=2024-01-01&fim=2024-01-31
 
-Invocando via JavaScript (Fetch API):Se for construir um painel web próprio depois.
+2. Invocando via JavaScript (Fetch API):Se for construir um painel web próprio depois.
 
 const url = "https://sua-api-aqui.up.railway.app/api/relatorio?key=SUA_CHAVE_AQUI&inicio=2024-04-01";
 

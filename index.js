@@ -20,7 +20,9 @@ app.get('/api/relatorio', async (req, res) => {
         const relatorio = {
             usuarios_uni: 0,
             page_views: 0,
-            start_funil: 0, 
+            start_funil: 0,
+            ja_jogou: 0, // <-- NOVO: Já joga GTA RP
+            nao_jogou: 0, // <-- NOVO: Não joga GTA RP
             tem_pc: 0,
             nao_pc: 0,
             click_grupo: 0, 
@@ -79,6 +81,10 @@ app.get('/api/relatorio', async (req, res) => {
                 if (sessao.clicked_whatsapp) relatorio.start_funil++;
                 if (sessao.clicked_whatsapp_2) relatorio.click_grupo++;
                 
+                // --- NOVA LÓGICA DO GTA RP ---
+                if (sessao.plays_gta_rp === true) relatorio.ja_jogou++;
+                if (sessao.plays_gta_rp === false) relatorio.nao_jogou++;
+
                 if (sessao.has_pc === true) relatorio.tem_pc++;
                 if (sessao.has_pc === false) relatorio.nao_pc++; 
                 
@@ -123,5 +129,5 @@ app.get('/api/relatorio', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 API Sincronizada (Fix Fuso) rodando na porta ${PORT}`);
+    console.log(`🚀 API Sincronizada (Fix Fuso + GTA RP) rodando na porta ${PORT}`);
 });
